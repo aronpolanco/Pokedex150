@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokédex Retro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Fondo oscuro para PC */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100dvh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .pokedex-font { font-family: 'Press Start 2P', cursive; }
+
+        /* Contenedor Principal: En PC es un celular, en Móvil es pantalla completa */
+        .pokedex-container {
+            width: 100%;
+            height: 100dvh; 
+            background-color: #dc0a2d;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* DISEÑO PARA PC (Laptop Asus) */
+        @media (min-width: 481px) {
+            .pokedex-container {
+                max-width: 400px; /* Ancho fijo de celular */
+                height: 90vh; /* No toca los bordes de la PC */
+                max-height: 850px;
+                border-radius: 20px;
+                border: 4px solid #8b0000;
+                box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), 10px 10px 30px rgba(0,0,0,0.5);
+            }
+        }
+
+        /* DISEÑO PARA MÓVIL (Oppo y similares) */
+        @media (max-width: 480px) {
+            .pokedex-container {
+                border-radius: 0; 
+                border: none; 
+            }
+        }
+
+        .pokedex-header {
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            background: linear-gradient(180deg, #ff1c45 0%, #dc0a2d 100%);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .main-lens {
+            width: 60px; 
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #aae7ff, #118cba);
+            border-radius: 50%;
+            border: 5px solid #dedede;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.8);
+            position: relative;
+        }
+        
+        .main-lens::after {
+            content: ''; position: absolute; top: 15%; left: 15%;
+            width: 15px; height: 15px; background-color: rgba(255,255,255,0.7); border-radius: 50%;
+        }
+
+        .mini-lights { display: flex; gap: 10px; margin-left: 20px; }
+        .mini-light {
+            width: 12px; height: 12px; 
+            border-radius: 50%; border: 2px solid #555;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.5);
+        }
+        
+        .light-red { background-color: #ff0000; animation: blink 3s infinite; }
+        .light-yellow { background-color: #ffea00; }
+        .light-green { background-color: #00ff00; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .header-border {
+            position: absolute; bottom: -20px; left: 0; width: 100%; height: 30px; display: flex;
+        }
+        .border-left { width: 45%; height: 100%; background-color: #dc0a2d; border-bottom: 4px solid #8b0000; }
+        .border-slant { 
+            width: 40px; height: 100%; background-color: #dc0a2d; 
+            transform: skew(-45deg); transform-origin: top left;
+            border-bottom: 4px solid #8b0000; margin-left: -20px; z-index: -1;
+        }
+        .border-right { width: 55%; height: 10px; background-color: transparent; border-bottom: 4px solid #8b0000; transform: translateY(-20px); }
+
+        .screen-container {
+            flex: 1;
+            padding: 20px 20px 10px; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 0;
+            z-index: 5;
+        }
+
+        .screen-bezel {
+            background-color: #dedede; 
+            border-radius: 10px 10px 10px 40px;
+            padding: 15px; 
+            box-shadow: inset 2px 2px 10px rgba(0,0,0,0.2); 
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .screen {
+            background-color: #222; 
+            border-radius: 5px; 
+            flex: 1;
+            position: relative; 
+            overflow: hidden; 
+            border: 4px solid #555;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- TARJETA DE POKÉMON (MODIFICADA PARA ENCAJAR PERFECTO Y SIN BORDES VERDES) --- */
+        .pokemon-card {
+            background-color: #fdf8f8;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; /* Centra y distribuye el espacio uniformemente */
+            align-items: center;
+            flex: 1; 
+            min-height: 0;
+            padding: 10px 5px;
+            border: none; /* ASEGURAMOS QUE NO HAYA BORDES HEREDADOS */
+        }
+
+        .image-container {
+            width: 110px;
+            height: 110px;
+            background: radial-gradient(circle, #e2e8f0 0%, #cbd5e1 100%);
+            border-radius: 50%;
+            border: 3px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        @media (max-height: 700px) {
+             .image-container { width: 90px; height: 90px; }
+        }
+
+        .pokemon-image { width: 85%; height: 85%; object-fit: contain; }
+
+        .type-pill {
+            padding: 4px 12px; border-radius: 20px; font-family: 'Inter', sans-serif;
+            font-weight: 700; font-size: 0.8rem; color: white; 
+            border: 2px solid #333; text-transform: capitalize;
+        }
+
+        .stat-box {
+            background-color: #fff; border: 2px solid #e2e8f0; border-radius: 8px;
+            padding: 5px 10px; display: flex; flex-direction: column; align-items: center; 
+            width: 45%; max-width: 100px;
+        }
+
+        /* Tipos de Pokémon */
+        .type-water { background-color: #6890F0; } .type-fire { background-color: #EE8130; }
+        .type-grass { background-color: #7AC74C; } .type-electric { background-color: #F7D02C; }
+        .type-psychic { background-color: #F95587; } .type-normal { background-color: #A8A878; }
+        .type-bug { background-color: #A8B820; } .type-poison { background-color: #A040A0; }
+        .type-ground { background-color: #E0C068; } .type-rock { background-color: #B8A038; }
+        .type-flying { background-color: #A890F0; } .type-ghost { background-color: #705898; }
+        .type-fighting { background-color: #C03028; } .type-ice { background-color: #98D8D8; }
+        .type-dragon { background-color: #7038F8; } .type-dark { background-color: #705848; }
+        .type-steel { background-color: #B8B8D0; } .type-fairy { background-color: #EE99AC; }
+
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background-color: rgba(0, 255, 0, 0.7); box-shadow: 0 0 10px rgba(0, 255, 0, 0.9);
+            animation: scan 2s linear infinite; z-index: 10;
+        }
+        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+
+        .toast {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); color: white; padding: 8px 16px;
+            border-radius: 20px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; z-index: 100;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="pokedex-container">
+        <!-- HEADER -->
+        <div class="pokedex-header">
+            <div class="main-lens"></div>
+            <div class="mini-lights">
+                <div class="mini-light light-red"></div>
+                <div class="mini-light light-yellow"></div>
+                <div class="mini-light light-green"></div>
+            </div>
+            <div class="header-border">
+                <div class="border-left"></div><div class="border-slant"></div><div class="border-right"></div>
+            </div>
+        </div>
+
+        <!-- PANTALLA -->
+        <div class="screen-container">
+            <div class="screen-bezel flex flex-col">
+                <div class="flex justify-center gap-4 mb-2">
+                    <div class="w-2 h-2 bg-red-600 rounded-full border border-gray-600"></div>
+                    <div class="w-2 h-2 bg-red-600 rounded-full border border-gray-600"></div>
+                </div>
+                
+                <div class="screen flex-1" id="main-screen" style="background-color: #fff;">
+                    
+                    <!-- VISTA CÁMARA (Oculta por defecto) -->
+                    <div id="camera-mode" class="hidden w-full h-full relative bg-black">
+                        <div id="camera-status" class="absolute inset-0 flex flex-col items-center justify-center text-white pokedex-font text-[10px] text-center p-4 z-10 bg-black/80">
+                            INICIANDO<br>CÁMARA...
+                        </div>
+                        <video id="camera-view" playsinline muted class="w-full h-full object-cover"></video>
+                        <div class="scan-line"></div>
+                        <button id="close-camera-btn" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center border-2 border-white shadow-md z-20">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                        <button id="switch-camera-btn" class="absolute bottom-10 right-2 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center border-2 border-white shadow-md z-20">
+                            <i class="fa-solid fa-camera-rotate"></i>
+                        </button>
+                        <div class="absolute bottom-2 left-0 w-full text-center z-20">
+                            <span class="bg-black/60 text-white px-2 py-1 rounded text-xs font-sans font-bold border border-white/30">Enfoca un QR</span>
+                        </div>
+                    </div>
+                    
+                    <!-- VISTA INFORMACIÓN POKÉMON (Card Limpia, sin descripción ni verdes) -->
+                    <div id="info-mode" class="w-full h-full relative flex flex-col">
+                        <div id="pokemon-card-container" class="pokemon-card">
+                            
+                            <!-- Foto y Nombre -->
+                            <div class="flex flex-col items-center w-full">
+                                <div class="image-container">
+                                     <img id="poke-image" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" alt="Pokemon" class="pokemon-image">
+                                </div>
+                                <div id="poke-id" class="font-bold text-gray-500 text-sm mt-2">#001</div>
+                                <h2 id="poke-name" class="font-black text-gray-800 text-2xl capitalize m-0 leading-none">Bulbasaur</h2>
+                            </div>
+                            
+                            <!-- Tipos y Estadísticas -->
+                            <div class="flex flex-col items-center w-full gap-3">
+                                <div id="poke-types" class="flex gap-2 justify-center w-full">
+                                    <div class="type-pill type-grass">Planta</div>
+                                </div>
+                                
+                                <div class="flex gap-4 w-full justify-center">
+                                    <div class="stat-box">
+                                        <div class="text-xs text-gray-500 mb-1">Peso</div>
+                                        <div class="font-black text-gray-800 text-lg leading-none"><span id="poke-weight">6.9</span> <span class="text-xs">kg</span></div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-xs text-gray-500 mb-1">Altura</div>
+                                        <div class="font-black text-gray-800 text-lg leading-none"><span id="poke-height">0.7</span> <span class="text-xs">m</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- SE ELIMINÓ LA DESCRIPCIÓN VISUAL -->
+                            
+                        </div>
+
+                        <!-- Elementos flotantes de sistema -->
+                        <div id="audio-indicator" class="hidden absolute top-2 left-2 z-10 flex gap-1 h-3 items-end">
+                            <div class="w-1 bg-blue-500 rounded-t h-full animate-bounce"></div>
+                            <div class="w-1 bg-blue-500 rounded-t h-1/2 animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-1 bg-blue-500 rounded-t h-3/4 animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+
+                        <div id="loading-overlay" class="absolute inset-0 bg-white/90 z-50 hidden flex-col items-center justify-center">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-red-600 mb-3"></i>
+                            <span class="font-sans font-bold text-sm text-gray-700 animate-pulse">Buscando...</span>
+                        </div>
+                        
+                        <div id="error-overlay" class="absolute inset-0 bg-red-50 z-50 hidden flex-col items-center justify-center text-red-800">
+                            <i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-red-500"></i>
+                            <span class="font-sans font-bold text-sm text-center px-4" id="error-message">No encontrado</span>
+                        </div>
+                        
+                        <div id="toast-message" class="toast">Link copiado</div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-3">
+                    <div class="w-4 h-4 bg-red-600 rounded-full border-2 border-gray-500"></div>
+                    <div class="flex gap-1">
+                        <div class="w-6 h-1 bg-black rounded-full"></div>
+                        <div class="w-6 h-1 bg-black rounded-full"></div>
+                        <div class="w-6 h-1 bg-black rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLES INFERIORES -->
+        <div class="px-5 pb-5 pt-0 flex flex-col gap-3">
+            
+            <div class="flex gap-2 bg-black/20 p-2 rounded-lg border border-black/30 shadow-inner">
+                <input type="text" id="manual-pokemon-input" placeholder="Nombre o ID..." class="w-full px-3 py-1 text-xs font-mono rounded bg-white text-black border-2 border-gray-400 focus:outline-none focus:border-blue-500 uppercase">
+                <button id="manual-scan-btn" class="bg-blue-600 text-white px-4 py-1 rounded border-2 border-blue-900 shadow-md active:translate-y-1"><i class="fa-solid fa-search"></i></button>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <!-- Botones Izquierdos -->
+                <div class="flex gap-2">
+                    <button id="toggle-camera-btn" class="w-12 h-12 rounded-full bg-slate-800 border-4 border-gray-600 shadow-md flex items-center justify-center text-white active:translate-y-1">
+                        <i class="fa-solid fa-qrcode text-lg"></i>
+                    </button>
+                    <button id="share-btn" class="w-12 h-12 rounded-full bg-blue-500 border-4 border-blue-800 shadow-md flex items-center justify-center text-white active:translate-y-1">
+                        <i class="fa-solid fa-share-nodes text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Botones Píldora -->
+                <div class="flex flex-col gap-2 justify-center">
+                    <button id="play-voice-btn" class="w-10 h-3 bg-[#ff0000] border border-[#880000] rounded-full shadow-md active:bg-red-400 focus:outline-none" title="Repetir Voz"></button>
+                    <div class="w-10 h-3 bg-[#3b4cca] border border-[#1a2575] rounded-full shadow-md"></div>
+                </div>
+
+                <!-- D-Pad -->
+                <div class="relative w-[70px] h-[70px]">
+                    <div class="absolute top-0 left-[22px] w-[26px] h-[70px] bg-[#222] rounded-md border border-[#111]"></div>
+                    <div class="absolute top-[22px] left-0 w-[70px] h-[26px] bg-[#222] rounded-md border border-[#111]"></div>
+                    <div class="absolute top-[22px] left-[22px] w-[26px] h-[26px] bg-[#222] z-10 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-[#111] shadow-inner"></div>
+                    </div>
+                    
+                    <button id="btn-prev" class="absolute top-[22px] left-0 w-[22px] h-[26px] z-20 hover:bg-white/20 rounded-l-md active:bg-white/30"></button>
+                    <button id="btn-next" class="absolute top-[22px] right-0 w-[22px] h-[26px] z-20 hover:bg-white/20 rounded-r-md active:bg-white/30"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoMode = document.getElementById('info-mode');
+            const pokeNameEl = document.getElementById('poke-name');
+            const pokeIdEl = document.getElementById('poke-id');
+            const pokeImageEl = document.getElementById('poke-image');
+            const pokeTypesEl = document.getElementById('poke-types');
+            const pokeHeightEl = document.getElementById('poke-height');
+            const pokeWeightEl = document.getElementById('poke-weight');
+            const audioIndicator = document.getElementById('audio-indicator');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const errorOverlay = document.getElementById('error-overlay');
+            const errorMessage = document.getElementById('error-message');
+            const toastMessage = document.getElementById('toast-message');
+
+            const cameraMode = document.getElementById('camera-mode');
+            const video = document.getElementById('camera-view');
+            const cameraStatus = document.getElementById('camera-status');
+            
+            const toggleCameraBtn = document.getElementById('toggleCamera-btn');
+            const closeCameraBtn = document.getElementById('close-camera-btn');
+            const switchCameraBtn = document.getElementById('switch-camera-btn');
+            const manualInput = document.getElementById('manual-pokemon-input');
+            const manualScanBtn = document.getElementById('manual-scan-btn');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const playVoiceBtn = document.getElementById('play-voice-btn');
+            const shareBtn = document.getElementById('share-btn');
+
+            let currentPokemonId = 1;
+            let lastPokemonData = null;
+            let lastDescription = "";
+            let cameraStream = null;
+            let scanningQR = false;
+            let animationFrameId;
+            let synth = window.speechSynthesis;
+            let currentUtterance = null;
+            let useFrontCamera = false; 
+            
+            const canvasElement = document.createElement('canvas');
+            const canvasContext = canvasElement.getContext('2d', { willReadFrequently: true });
+
+            const API_KEY = "clase_pokemon_2024";
+            const BASE_URL = "https://aronunisur.pythonanywhere.com/pokemon";
+
+            function initPokedex() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryId = urlParams.get('id');
+                fetchPokemonData(queryId || currentPokemonId);
+            }
+
+            async function fetchPokemonData(identifier) {
+                if (!identifier) return;
+                const query = identifier.toString().toLowerCase().trim();
+                loadingOverlay.style.display = 'flex';
+                errorOverlay.style.display = 'none';
+
+                try {
+                    let data = null;
+                    let description = "";
+                    let isCustomApi = true;
+
+                    try {
+                        const customUrl = `${BASE_URL}/${query}?api_key=${API_KEY}`;
+                        const response = await fetch(customUrl, {
+                            headers: { 'Authorization': API_KEY, 'X-API-Key': API_KEY }
+                        });
+                        if (!response.ok) throw new Error("API Custom Falló");
+                        data = await response.json();
+                        if (!data.name && !data.Nombre && !data.pokemon) throw new Error("Faltan datos");
+                        
+                        if (!data.name && data.Nombre) data.name = data.Nombre;
+                        if (!data.weight && data.Peso) data.weight = data.Peso;
+                        if (!data.height && data.Altura) data.height = data.Altura;
+
+                        description = data.description || data.descripción || "Datos recuperados.";
+                    } catch (customErr) {
+                        isCustomApi = false;
+                        const pokeResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${query}`);
+                        if (!pokeResponse.ok) throw new Error("Pokémon no encontrado");
+                        data = await pokeResponse.json();
+
+                        try {
+                            const speciesResponse = await fetch(data.species.url);
+                            const speciesData = await speciesResponse.json();
+                            const esFlavor = speciesData.flavor_text_entries.find(e => e.language.name === 'es');
+                            description = esFlavor ? esFlavor.flavor_text.replace(/[\n\f]/g, ' ') : "Sin descripción";
+                        } catch(e) {
+                            description = "Sin descripción.";
+                        }
+                    }
+
+                    if (data.id) currentPokemonId = parseInt(data.id);
+                    lastPokemonData = data;
+                    lastDescription = description;
+                    
+                    populateUI(data, isCustomApi);
+                    speak(`${data.name}. ${description}`);
+
+                } catch (error) {
+                    showError("No encontrado");
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                    manualInput.value = ''; 
+                }
+            }
+
+            function populateUI(data, isCustomApi) {
+                const idNum = data.id || currentPokemonId;
+                pokeIdEl.textContent = typeof idNum === 'number' ? `#${idNum.toString().padStart(3, '0')}` : `#${idNum}`;
+                pokeNameEl.textContent = data.name || "Desconocido";
+                
+                let imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${idNum}.png`;
+                if (data.sprites?.other?.['official-artwork']?.front_default) {
+                    imageUrl = data.sprites.other['official-artwork'].front_default;
+                } else if (data.image_url) {
+                    imageUrl = data.image_url;
+                }
+                
+                pokeImageEl.onerror = () => { pokeImageEl.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"; };
+                pokeImageEl.src = imageUrl;
+                
+                pokeHeightEl.textContent = data.height ? (isCustomApi ? data.height : (data.height / 10).toFixed(1)) : "?";
+                pokeWeightEl.textContent = data.weight ? (isCustomApi ? data.weight : (data.weight / 10).toFixed(1)) : "?";
+
+                pokeTypesEl.innerHTML = '';
+                const typesArray = data.types || (data.type ? [data.type] : []);
+                const typeTranslations = {
+                    water: 'Agua', fire: 'Fuego', grass: 'Planta', electric: 'Eléctrico',
+                    psychic: 'Psíquico', normal: 'Normal', poison: 'Veneno', bug: 'Bicho',
+                    flying: 'Volador', ground: 'Tierra', rock: 'Roca', ghost: 'Fantasma',
+                    dragon: 'Dragón', ice: 'Hielo', fighting: 'Lucha', fairy: 'Hada',
+                    steel: 'Acero', dark: 'Siniestro'
+                };
+
+                if (typesArray.length > 0) {
+                    typesArray.forEach(typeInfo => {
+                        const typeName = typeof typeInfo === 'string' ? typeInfo.toLowerCase() : (typeInfo.type ? typeInfo.type.name : 'normal');
+                        const div = document.createElement('div');
+                        div.className = `type-pill type-${typeName}`;
+                        div.textContent = typeTranslations[typeName] || typeName;
+                        pokeTypesEl.appendChild(div);
+                    });
+                } else {
+                    const div = document.createElement('div');
+                    div.className = `type-pill type-normal`;
+                    div.textContent = "??";
+                    pokeTypesEl.appendChild(div);
+                }
+                
+                // NOTA: SE ELIMINÓ LA LÓGICA DE CAMBIAR EL COLOR VERDE DE LA TARJETA
+            }
+
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorOverlay.style.display = 'flex';
+                setTimeout(() => { errorOverlay.style.display = 'none'; }, 2500);
+            }
+
+            function speak(text) {
+                if (synth && synth.speaking) synth.cancel();
+                if ('speechSynthesis' in window) {
+                    currentUtterance = new SpeechSynthesisUtterance(text);
+                    const voices = synth.getVoices();
+                    const esVoice = voices.find(v => v.lang.includes('es-419') || v.lang.includes('es-MX')) || voices.find(v => v.lang.startsWith('es'));
+                    if (esVoice) currentUtterance.voice = esVoice;
+                    
+                    currentUtterance.onstart = () => { audioIndicator.style.display = 'flex'; };
+                    currentUtterance.onend = () => { audioIndicator.style.display = 'none'; };
+                    currentUtterance.onerror = () => { audioIndicator.style.display = 'none'; };
+                    synth.speak(currentUtterance);
+                }
+            }
+
+            async function startCamera() {
+                try {
+                    infoMode.classList.add('hidden');
+                    cameraMode.classList.remove('hidden');
+                    cameraStatus.style.display = 'flex';
+                    cameraStatus.style.color = "white";
+
+                    if (window.location.protocol === 'file:' || window.location.protocol === 'content:') {
+                        cameraStatus.innerHTML = "<span style='font-size:12px; color:#ff5555;'>BLOQUEADA</span><br><br><span style='font-size:8px; line-height:1.2;'>Abre la web desde un host HTTPS<br>para usar la cámara.</span>";
+                        setTimeout(stopCamera, 4000);
+                        return;
+                    }
+                    
+                    const facingMode = useFrontCamera ? "user" : "environment";
+                    try {
+                        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+                    } catch (e) {
+                        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    }
+                    
+                    if (useFrontCamera) video.classList.add('scale-x-[-1]');
+                    else video.classList.remove('scale-x-[-1]');
+
+                    video.srcObject = cameraStream;
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        cameraStatus.style.display = 'none';
+                        scanningQR = true;
+                        requestAnimationFrame(tickQR);
+                    };
+                } catch (err) {
+                    cameraStatus.innerHTML = "ERROR DE CÁMARA";
+                    cameraStatus.style.color = "#ff5555";
+                    setTimeout(stopCamera, 2000);
+                }
+            }
+
+            async function switchCamera() {
+                if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+                useFrontCamera = !useFrontCamera;
+                startCamera();
+            }
+
+            function stopCamera() {
+                scanningQR = false;
+                cancelAnimationFrame(animationFrameId);
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(t => t.stop());
+                    cameraStream = null;
+                }
+                cameraMode.classList.add('hidden');
+                infoMode.classList.remove('hidden');
+            }
+
+            function tickQR() {
+                if (!scanningQR) return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvasElement.height = video.videoHeight;
+                    canvasElement.width = video.videoWidth;
+                    canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                    
+                    const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+                    if (code && code.data) {
+                        stopCamera();
+                        let qrText = code.data.trim();
+                        let finalQuery = qrText;
+                        
+                        try {
+                            if (qrText.includes('aronunisur.pythonanywhere.com/pokemon/')) {
+                                const parts = qrText.split('/pokemon/');
+                                finalQuery = parts[1].split('?')[0].replace(/\/$/, ""); 
+                            } else if (qrText.includes('?id=')) {
+                                finalQuery = new URL(qrText).searchParams.get('id');
+                            } else if (qrText.startsWith('http')) {
+                                let cleanUrl = qrText.replace(/\/$/, "");
+                                finalQuery = cleanUrl.split('?')[0].split('/').pop(); 
+                            }
+                        } catch (e) { }
+                        
+                        if (finalQuery) {
+                            const cleanQuery = decodeURIComponent(finalQuery.toString().toLowerCase().trim());
+                            manualInput.value = cleanQuery;
+                            fetchPokemonData(cleanQuery);
+                        }
+                        return;
+                    }
+                }
+                animationFrameId = requestAnimationFrame(tickQR);
+            }
+
+            // Event Listeners
+            manualScanBtn.addEventListener('click', () => { if(manualInput.value) fetchPokemonData(manualInput.value); });
+            manualInput.addEventListener('keypress', (e) => { if(e.key === 'Enter' && manualInput.value) fetchPokemonData(manualInput.value); });
+            
+            // Solucionar posible error de que no se encontraba el botón
+            const tCamBtn = document.getElementById('toggle-camera-btn');
+            if(tCamBtn) tCamBtn.addEventListener('click', startCamera);
+            
+            closeCameraBtn.addEventListener('click', stopCamera);
+            switchCameraBtn.addEventListener('click', switchCamera);
+
+            btnPrev.addEventListener('click', () => { if(currentPokemonId > 1) fetchPokemonData(currentPokemonId - 1); });
+            btnNext.addEventListener('click', () => { fetchPokemonData(currentPokemonId + 1); });
+
+            playVoiceBtn.addEventListener('click', () => {
+                if(lastPokemonData && lastDescription) speak(`${lastPokemonData.name}. ${lastDescription}`);
+            });
+
+            shareBtn.addEventListener('click', () => {
+                let pokeIdentifier = currentPokemonId;
+                if (lastPokemonData && lastPokemonData.name) pokeIdentifier = lastPokemonData.name.toLowerCase();
+                const shareUrl = `${BASE_URL}/${pokeIdentifier}`;
+                
+                try {
+                    const tempInput = document.createElement('input');
+                    tempInput.value = shareUrl;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    
+                    toastMessage.classList.add('show');
+                    setTimeout(() => { toastMessage.classList.remove('show'); }, 2000);
+                } catch (err) { }
+            });
+
+            initPokedex();
+        });
+    </script>
+</body>
+</html>
