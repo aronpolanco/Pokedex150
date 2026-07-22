@@ -1,15 +1,19 @@
 {
-  "name": "Pokédex 150",
+  "name": "Pokédex Retro",
   "short_name": "Pokédex",
+  "description": "Una Pokédex interactiva con escáner QR.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffcb05",
+  "background_color": "#111827",
+  "theme_color": "#dc0a2d",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icono.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
