@@ -1,0 +1,15 @@
+{
+  "name": "Pokédex 150",
+  "short_name": "Pokédex",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffcb05",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
