@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.aronpolanco.twa",
+        "sha256_cert_fingerprints": ["2A:3F:CB:39:66:61:94:AE:F0:18:7C:57:40:37:EB:9E:0A:11:E9:1D:E4:53:97:A6:E8:10:8F:CC:D9:E9:7D:A1"]
+      }
+    }]
